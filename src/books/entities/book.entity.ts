@@ -1,5 +1,6 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm";
 import { Category } from "../../categories/entities/category.entity.js";
+import { BorrowBook } from "../../borrow_books/entities/borrow_book.entity.js";
 
 @Entity('books')
 export class Book {
@@ -9,14 +10,17 @@ export class Book {
     @Column({ nullable: false })
     name: string;
 
-    @Column()
+    @Column({ nullable: true })
     author: string;
 
-    @Column()
+    @Column({ nullable: true })
     price: number;
 
     @ManyToOne(() => Category, (category) => category.books, { onDelete: 'SET NULL', nullable: true })
     category: any;
+
+    @OneToMany(() => BorrowBook, (borrowBook) => borrowBook.book)
+    borrowBooks: any;
 
     @Column()
     createdAt: Date;

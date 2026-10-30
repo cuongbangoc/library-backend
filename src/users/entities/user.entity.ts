@@ -1,14 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BorrowBook } from "../../borrow_books/entities/borrow_book.entity.js";
 
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid') // Random ID
     id: string;
 
-    @Column()
+    @Column({ nullable: true })
     fullName: string;
 
-    @Column()
+    @Column({ nullable: true })
     phone: string;
 
     @Column({ unique: true, nullable: false })
@@ -22,6 +23,9 @@ export class User {
 
     @Column({ nullable: false, default: true })
     isActive: boolean;
+
+    @OneToMany(() => BorrowBook, (borrowBook) => borrowBook.user)
+    borrowBooks: any;
 
     @Column()
     createdAt: Date;
