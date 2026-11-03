@@ -1,17 +1,21 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto.js';
-import { UpdateAuthDto } from './dto/update-auth.dto.js';
+import { LoginDto } from './dto/login.dto.js';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from '../common/enums/role.enum.js';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) { }
 
   async create(registerDto: RegisterDto) {
@@ -58,19 +62,44 @@ export class AuthService {
     };
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+    const existsUser = await this.userRepository.findOne({
+      where: {
+        email: email.trim(),
+      },
+    });
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    if (!existsUser) {
+      throw new BadRequestException('Account not exists');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    if (!existsUser.isActive) {
+      throw new BadRequestException('Account not active');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, existsUser.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    // Tao Token JWT
+    const jwtPayload = {
+      sub: existsUser.id,
+      email: existsUser.email,
+      role: existsUser.role,
+    };
+
+    const jwtToken = this.jwtService.sign(jwtPayload);
+
+    return {
+      message: 'success',
+      accessToken: jwtToken,
+      user: {
+        id: existsUser.id,
+        fullName: existsUser.fullName,
+      },
+    };
   }
 }
