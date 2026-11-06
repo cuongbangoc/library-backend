@@ -11,18 +11,13 @@ import type { Request, Express } from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { AdminChangePasswordDto } from './dto/admin.change-password.dto.js';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
+  // === USER API ====
   @Get('/profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: Request) {
@@ -62,6 +57,23 @@ export class UsersController {
     // console.log(file);
     return this.usersService.changeAvatar(reqUser, file);
   }
+
+
+  // === ADMIN API ===
+  @Post('admin/add-user')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  addUser(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
+
+  @Patch('/admin/change-user-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  adminChangePassword(@Body() adminChangePasswordDto: AdminChangePasswordDto) {
+    return this.usersService.adminChangePassword(adminChangePasswordDto);
+  }
+
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)

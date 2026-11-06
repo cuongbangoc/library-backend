@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
+import { AdminChangePasswordDto } from './dto/admin.change-password.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -116,5 +117,39 @@ export class UsersService {
       message: 'Avatar changed successfully',
     };
 
+  }
+
+  async adminChangePassword(adminChangePasswordDto: AdminChangePasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: adminChangePasswordDto.userId,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('User is not active');
+    }
+
+    if (adminChangePasswordDto.newPassword !== adminChangePasswordDto.confirmPassword) {
+      throw new BadRequestException('New password and confirm password do not match');
+    }
+
+    const isMatchNewPassword = await bcrypt.compare(adminChangePasswordDto.newPassword, user.password);
+    if (isMatchNewPassword) {
+      throw new BadRequestException('New password is the same as old password');
+    }
+
+    const newHashedPassword = await bcrypt.hash(adminChangePasswordDto.newPassword, 10);
+    user.password = newHashedPassword;
+    user.updatedAt = new Date();
+
+    await this.userRepository.save(user);
+    return {
+      message: 'Password changed successfully',
+    };
   }
 }
