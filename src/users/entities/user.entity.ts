@@ -32,5 +32,8 @@ export class User {
 
     @Column()
     updatedAt: Date;
+
+    @Column({ nullable: true })
+    avatar: string;
 }
 

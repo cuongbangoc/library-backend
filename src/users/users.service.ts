@@ -6,12 +6,14 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
   ) { }
 
   create(createUserDto: CreateUserDto) {
@@ -41,12 +43,14 @@ export class UsersService {
       },
     });
 
+    const avatarUrl = `${this.configService.get<string>('BASE_URL')}/${user?.avatar}`;
     return {
       id: user?.id,
       email: user?.email,
       fullName: user?.fullName,
       phone: user?.phone,
       role: user?.role,
+      avatar: user?.avatar ? avatarUrl : null,
     };
   }
 
@@ -88,5 +92,29 @@ export class UsersService {
     return {
       message: 'Password changed successfully',
     };
+  }
+
+  async changeAvatar(reqUser: any, file: Express.Multer.File) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: reqUser.id,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (!user.isActive) {
+      throw new BadRequestException('User is not active');
+    }
+
+    user.avatar = file.path;
+    user.updatedAt = new Date();
+
+    await this.userRepository.save(user);
+    return {
+      message: 'Avatar changed successfully',
+    };
+
   }
 }
