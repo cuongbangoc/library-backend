@@ -1,5 +1,5 @@
 import 'multer';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
 import { UsersService } from './users.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
@@ -12,6 +12,7 @@ import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { AdminChangePasswordDto } from './dto/admin.change-password.dto.js';
+import { ToggleActiveDto } from './dto/toggle-active.dto.js';
 
 @Controller('users')
 export class UsersController {
@@ -77,23 +78,42 @@ export class UsersController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.USER)
-  findAll() {
-    return this.usersService.findAll();
+  @Roles(Role.ADMIN, Role.LIBRARIAN)
+  findAll(@Query('email') email: string, @Query('phone') phone: string, @Query('role') role: string) {
+    const queryParams = {
+      email,
+      phone,
+      role,
+    };
+
+    return this.usersService.findAll(queryParams);
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.LIBRARIAN)
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    return this.usersService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
+  }
+
+  @Patch(':id/toggle-active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  toggleActive(@Param('id') id: string, @Body() toggleActiveDto: ToggleActiveDto) {
+    return this.usersService.toggleActive(id, toggleActiveDto);
   }
 }

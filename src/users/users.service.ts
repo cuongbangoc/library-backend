@@ -8,6 +8,7 @@ import { ChangePasswordDto } from './dto/change-password.dto.js';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { AdminChangePasswordDto } from './dto/admin.change-password.dto.js';
+import { ToggleActiveDto } from './dto/toggle-active.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -17,24 +18,123 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) { }
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  async create(createUserDto: CreateUserDto) {
+    const { email, password, fullName, phone, role } = createUserDto;
+
+    //Kiểm tra email đã tồn tại
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = this.userRepository.create({
+      email,
+      password: hashedPassword,
+      fullName,
+      phone,
+      role: role || 'USER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return await this.userRepository.save(user);
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll(queryParams: any) {
+    const where = {
+      email: '',
+      phone: '',
+      role: '',
+    };
+    if (queryParams.email) {
+      where.email = queryParams.email;
+    }
+    if (queryParams.role) {
+      where.role = queryParams.role;
+    }
+    if (queryParams.phone) {
+      where.phone = queryParams.phone;
+    }
+
+    const users = await this.userRepository.find({
+      where,
+    });
+
+    return users;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  findOne(id: string) {
+    return this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    user.email = updateUserDto.email || user.email;
+    user.phone = updateUserDto.phone || user.phone;
+    user.role = updateUserDto.role || user.role;
+    user.fullName = updateUserDto.fullName || user.fullName;
+
+    user.updatedAt = new Date();
+
+    await this.userRepository.save(user);
+    return {
+      message: 'User updated successfully',
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    await this.userRepository.remove(user);
+
+    return {
+      message: 'User removed successfully',
+    };
+  }
+
+  async toggleActive(id: string, toggleActiveDto: ToggleActiveDto) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    user.isActive = toggleActiveDto.isActive;
+    user.updatedAt = new Date();
+
+    await this.userRepository.save(user);
+    return {
+      message: 'User status changed successfully',
+    };
   }
 
   async getProfile(id: string) {
