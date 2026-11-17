@@ -7,4 +7,5 @@ export class CreateBookDto {
     author: string;
     price: number;
     categoryId: string;
+    availableNumber: number;
 }

@@ -27,4 +27,7 @@ export class Book {
 
     @Column()
     updatedAt: Date;
+
+    @Column()
+    availableNumber: number;
 }

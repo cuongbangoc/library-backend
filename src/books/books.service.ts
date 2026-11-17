@@ -125,6 +125,7 @@ export class BooksService {
     book.name = updateBookDto.name || book.name;
     book.price = updateBookDto.price || book.price;
     book.category = existsCategory || book.category;
+    book.availableNumber = updateBookDto.availableNumber || book.availableNumber;
     book.updatedAt = new Date();
 
     return this.bookRepository.save(book);
