@@ -6,6 +6,7 @@ import { Book } from '../books/entities/book.entity.js';
 import { DataSource, In, Repository } from 'typeorm';
 import { BorrowBook } from './entities/borrow_book.entity.js';
 import { BorrowStatus } from '../common/enums/borrow-status.enum.js';
+import { Role } from '../common/enums/role.enum.js';
 
 @Injectable()
 export class BorrowBooksService {
@@ -176,5 +177,23 @@ export class BorrowBooksService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async findAllByUser(user: any) {
+    const { role, id } = user;
+    if (role === Role.USER) {
+      // Truy van du lieu theo id
+      const borrowBooks = await this.borrowBookRepository.find({
+        where: { user: { id } },
+        relations: { book: true },
+      });
+      return borrowBooks;
+    }
+
+    // Truy van all du lieu
+    const borrowBooks = await this.borrowBookRepository.find({
+      relations: { book: true },
+    });
+    return borrowBooks;
   }
 }

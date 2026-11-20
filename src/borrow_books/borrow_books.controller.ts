@@ -24,8 +24,10 @@ export class BorrowBooksController {
   // 1. Neu Role = USER thì chỉ trả về danh sách của user đó
   // 2. Con lai ADMIN, LIBRARIAN thì trả về toàn bộ phiếu mượn
   @Get()
-  findAll() {
-    return this.borrowBooksService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(@Req() req: any) {
+    const user = req.user;
+    return this.borrowBooksService.findAllByUser(user);
   }
 
   @Get(':id')
