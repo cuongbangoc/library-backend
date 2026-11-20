@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -28,10 +29,33 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformResponseInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  // Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Library API docs')
+    .setDescription('Tài liệu Library API')
+    .setVersion('1.0.0')
+    .addTag('library')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Nhập JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');
   await app.listen(port ?? 3000);
 
   Logger.log(`Application is running on: ${port}`);
+  Logger.log(`Swagger docs is running on: ${port}/api/docs`);
 }
 await bootstrap();

@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../common/enums/role.enum.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth-guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('categories')
 export class CategoriesController {
@@ -14,6 +15,7 @@ export class CategoriesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoriesService.create(createCategoryDto);
   }
@@ -31,6 +33,7 @@ export class CategoriesController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
   update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateCategoryDto);
   }
@@ -38,6 +41,7 @@ export class CategoriesController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);
   }
